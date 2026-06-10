@@ -1,0 +1,13 @@
+a = 1
+b = 7
+c = 6
+d = 1
+e = 7
+f = 2
+
+aA -> bD, eA
+bA -> 0
+cA -> bD, aD
+dA -> bA, fD
+eA -> 0
+fA -> eD
