@@ -1,13 +1,19 @@
 import os
 from collections import deque
 
-# === Получаем путь к папке, где лежит скрипт ===
+# === Получаем путь к папке со скриптом ===
 script_dir = os.path.dirname(os.path.abspath(__file__))
 input_file = os.path.join(script_dir, 'in.txt')
 
+print(f"Ищу файл: {input_file}\n")
+
 # === Чтение из in.txt ===
-with open(input_file, 'r', encoding='utf-8') as f:
-    lines = [line.strip() for line in f.readlines() if line.strip()]
+try:
+    with open(input_file, 'r', encoding='utf-8') as f:
+        lines = [line.strip() for line in f.readlines() if line.strip()]
+except FileNotFoundError:
+    print("❌ Файл in.txt не найден рядом со скриптом!")
+    exit(1)
 
 initial = {}
 rules = []
@@ -16,24 +22,21 @@ rule_id = 1
 for line in lines:
     line = line.strip()
     if '=' in line and '->' not in line:
-        # Начальные значения: a = 4
+        # Начальные значения: a = 5
         var, val = [x.strip() for x in line.split('=')]
         initial[var] = int(val)
     
     elif '->' in line:
         left, right = [x.strip() for x in line.split('->')]
         
-        # Левая часть: aA или bD
         left_var = left[0]
         left_dir = 1 if left[1].upper() == 'A' else -1
         
-        # Правая часть
         effects = []
         right = right.strip()
         
         if right in ['0', '0 ']:
-            # Только меняем левую переменную
-            pass
+            pass  # свободное правило
         else:
             for item in right.split(','):
                 item = item.strip()
@@ -50,12 +53,12 @@ for line in lines:
         })
         rule_id += 1
 
-# Автоматическое определение переменных
-vars_order = sorted([v for v in initial.keys() if v in 'abcdef'])
+# Автоматическое определение всех переменных
+vars_order = sorted(initial.keys())
 target = tuple([4] * len(vars_order))
 
-print(f"Обнаружено переменных: {len(vars_order)} → {vars_order}")
-print(f"Цель: все равны 4\n")
+print(f"Переменных обнаружено: {len(vars_order)} → {vars_order}")
+print(f"Правил обнаружено: {len(rules)}\n")
 
 def state_to_tuple(s):
     return tuple(s.get(v, 4) for v in vars_order)
@@ -64,7 +67,7 @@ def apply_rule(state, rule_idx, multiplier):
     rule = rules[rule_idx]
     new_state = state.copy()
     
-    # Левая часть
+    # Левая переменная
     left_var = rule['var']
     change = rule['left_dir'] * multiplier
     new_state[left_var] = new_state.get(left_var, 4) + change
@@ -80,19 +83,21 @@ def apply_rule(state, rule_idx, multiplier):
     
     return new_state
 
-# BFS
+# BFS — самый короткий путь
 start = initial.copy()
 queue = deque([(start, [])])
 visited = {state_to_tuple(start)}
 
 solution = None
-max_depth = 150   # можно увеличить
+max_depth = 300  # можно увеличить
 
 while queue:
     state, path = queue.popleft()
+    
     if state_to_tuple(state) == target:
         solution = path
         break
+    
     if len(path) >= max_depth:
         continue
     
@@ -105,7 +110,7 @@ while queue:
 
 # Вывод результата
 if solution:
-    print(f"✅ Решение найдено за {len(solution)} шагов\n")
+    print(f"✅ Самое короткое решение найдено за {len(solution)} шагов\n")
     print("Последовательность (группами):")
     i = 0
     while i < len(solution):
